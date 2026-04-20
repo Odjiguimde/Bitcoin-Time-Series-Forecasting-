@@ -1,0 +1,244 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# k8s/namespace.yaml — Namespace dédié
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bitcoin-ts
+  labels:
+    project: bitcoin-timeseries
+    env: production
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# k8s/configmap.yaml — Variables de configuration
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bitcoin-ts-config
+  namespace: bitcoin-ts
+data:
+  PORT: "8000"
+  WORKERS: "2"
+  LOG_LEVEL: "info"
+  TF_CPP_MIN_LOG_LEVEL: "3"
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# k8s/deployment.yaml — Déploiement de l'API
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bitcoin-ts-api
+  namespace: bitcoin-ts
+  labels:
+    app: bitcoin-ts-api
+    version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bitcoin-ts-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0        # Zero-downtime deployment
+  template:
+    metadata:
+      labels:
+        app: bitcoin-ts-api
+        version: "1.0.0"
+    spec:
+      containers:
+        - name: api
+          image: bitcoin-ts-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: bitcoin-ts-config
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 40
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data-volume
+              mountPath: /app/data
+              readOnly: true
+            - name: models-volume
+              mountPath: /app/models
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: bitcoin-data-pvc
+        - name: models-volume
+          persistentVolumeClaim:
+            claimName: bitcoin-models-pvc
+      terminationGracePeriodSeconds: 30
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# k8s/service.yaml — Service exposition API
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: bitcoin-ts-api-svc
+  namespace: bitcoin-ts
+  labels:
+    app: bitcoin-ts-api
+spec:
+  type: ClusterIP
+  selector:
+    app: bitcoin-ts-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+
+---
+# Service LoadBalancer (exposition externe)
+apiVersion: v1
+kind: Service
+metadata:
+  name: bitcoin-ts-api-lb
+  namespace: bitcoin-ts
+spec:
+  type: LoadBalancer
+  selector:
+    app: bitcoin-ts-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# k8s/hpa.yaml — Horizontal Pod Autoscaler
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bitcoin-ts-api-hpa
+  namespace: bitcoin-ts
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bitcoin-ts-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# k8s/pvc.yaml — Persistent Volume Claims
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bitcoin-data-pvc
+  namespace: bitcoin-ts
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bitcoin-models-pvc
+  namespace: bitcoin-ts
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+  storageClassName: standard
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# k8s/ingress.yaml — Ingress Nginx
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bitcoin-ts-ingress
+  namespace: bitcoin-ts
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: bitcoin-ts.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: bitcoin-ts-api-svc
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bitcoin-ts-dashboard-svc
+                port:
+                  number: 8501
