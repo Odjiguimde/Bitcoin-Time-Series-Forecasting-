@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# requirements.txt — Projet 6 : Analyse des Séries Temporelles Bitcoin
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data Science core ─────────────────────────────────────────────────────────
+numpy==1.26.4
+pandas==2.2.2
+scipy==1.13.0
+
+# ── Visualisation ─────────────────────────────────────────────────────────────
+matplotlib==3.9.0
+seaborn==0.13.2
+plotly==5.22.0
+
+# ── Séries temporelles — Statistiques ─────────────────────────────────────────
+statsmodels==0.14.2
+pmdarima==2.0.4           # Auto-ARIMA
+
+# ── Prophet (Facebook) ────────────────────────────────────────────────────────
+prophet==1.1.5
+pystan==3.9.1             # dépendance Prophet
+
+# ── Machine Learning ──────────────────────────────────────────────────────────
+scikit-learn==1.5.0
+xgboost==2.0.3
+
+# ── Deep Learning ─────────────────────────────────────────────────────────────
+tensorflow==2.16.1         # inclut Keras
+# ou : tensorflow-cpu==2.16.1  # si pas de GPU
+
+# ── API FastAPI ────────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+pydantic==2.7.1
+python-multipart==0.0.9
+httpx==0.27.0             # client HTTP pour tests
+
+# ── Dashboard Streamlit ───────────────────────────────────────────────────────
+streamlit==1.35.0
+watchdog==4.0.1
+
+# ── Notebook ──────────────────────────────────────────────────────────────────
+jupyter==1.0.0
+jupyterlab==4.2.1
+ipykernel==6.29.4
+nbformat==5.10.4
+
+# ── Utilitaires ───────────────────────────────────────────────────────────────
+python-dotenv==1.0.1
+tqdm==4.66.4
+joblib==1.4.2
