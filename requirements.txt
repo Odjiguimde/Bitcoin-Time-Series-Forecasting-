@@ -1,51 +1,39 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# requirements.txt — Projet 6 : Analyse des Séries Temporelles Bitcoin
+# requirements.txt — Projet 6 : Bitcoin Time Series (Streamlit Cloud)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Data Science core ─────────────────────────────────────────────────────────
-numpy==1.26.4
-pandas==2.2.2
-scipy==1.13.0
+numpy>=1.26,<2.0
+pandas>=2.2,<3.0
+scipy>=1.13,<2.0
 
 # ── Visualisation ─────────────────────────────────────────────────────────────
-matplotlib==3.9.0
-seaborn==0.13.2
-plotly==5.22.0
+plotly>=5.22,<6.0
+# matplotlib et seaborn retirés : non utilisés dans le dashboard Streamlit
 
 # ── Séries temporelles — Statistiques ─────────────────────────────────────────
-statsmodels==0.14.2
-pmdarima==2.0.4           # Auto-ARIMA
+statsmodels>=0.14,<1.0
+# pmdarima retiré : Auto-ARIMA non utilisé dans app.py
 
-# ── Prophet (Facebook) ────────────────────────────────────────────────────────
-prophet==1.1.5
-pystan==3.9.1             # dépendance Prophet
+# ── Prophet ───────────────────────────────────────────────────────────────────
+prophet>=1.1.5,<2.0
+# pystan retiré : prophet>=1.1 utilise cmdstanpy par défaut, plus léger
 
 # ── Machine Learning ──────────────────────────────────────────────────────────
-scikit-learn==1.5.0
-xgboost==2.0.3
+scikit-learn>=1.5,<2.0
+xgboost>=2.0,<3.0
 
 # ── Deep Learning ─────────────────────────────────────────────────────────────
-tensorflow==2.16.1         # inclut Keras
-# ou : tensorflow-cpu==2.16.1  # si pas de GPU
-
-# ── API FastAPI ────────────────────────────────────────────────────────────────
-fastapi==0.111.0
-uvicorn[standard]==0.30.1
-pydantic==2.7.1
-python-multipart==0.0.9
-httpx==0.27.0             # client HTTP pour tests
+tensorflow-cpu>=2.16,<3.0
+# tensorflow-cpu au lieu de tensorflow : ~600MB gagnés, pas de GPU sur Streamlit Cloud
 
 # ── Dashboard Streamlit ───────────────────────────────────────────────────────
-streamlit==1.35.0
-watchdog==4.0.1
-
-# ── Notebook ──────────────────────────────────────────────────────────────────
-jupyter==1.0.0
-jupyterlab==4.2.1
-ipykernel==6.29.4
-nbformat==5.10.4
+streamlit>=1.35,<2.0
+# watchdog retiré : inutile sur Streamlit Cloud (utile seulement en dev local)
 
 # ── Utilitaires ───────────────────────────────────────────────────────────────
-python-dotenv==1.0.1
-tqdm==4.66.4
-joblib==1.4.2
+python-dotenv>=1.0,<2.0
+joblib>=1.4,<2.0
+# tqdm retiré : non utilisé dans app.py
+# jupyter/jupyterlab/ipykernel/nbformat retirés : inutiles sur Streamlit Cloud
+# fastapi/uvicorn/pydantic/httpx retirés : API séparée, pas dans le dashboard
