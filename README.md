@@ -7,7 +7,7 @@ Prévision multi-modèles (ARIMA, SARIMA, Prophet, XGBoost, LSTM) avec API FastA
 
 ##  Demo
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://your-app.streamlit.app)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bitcoin-ts.streamlit.app)
 [![FastAPI Docs](https://img.shields.io/badge/FastAPI-Docs-009688?logo=fastapi)](http://localhost:8000/docs)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](./docker)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Manifests-326CE5?logo=kubernetes)](./k8s)
@@ -228,8 +228,8 @@ docker-compose -f docker/docker-compose.yml up --build
 
 ```bash
 # 1. Build et push de l'image
-docker build -t your-registry/bitcoin-ts-api:1.0.0 -f docker/Dockerfile .
-docker push your-registry/bitcoin-ts-api:1.0.0
+docker build -t ghcr.io/votre-username/bitcoin-ts-api:1.0.0 -f docker/Dockerfile .
+docker push ghcr.io/votre-username/bitcoin-ts-api:1.0.0
 
 # 2. Déploiement
 kubectl apply -f k8s/manifests.yaml
@@ -275,7 +275,7 @@ kubectl logs -f deployment/bitcoin-ts-api -n bitcoin-ts
 
 ```bash
 # 1. Cloner le dépôt
-git clone https://github.com/votre-username/bitcoin-timeseries.git
+git clone https://github.com/votre-username/bitcoin-time-series-forecasting.git
 cd bitcoin-timeseries
 
 # 2. Environnement virtuel
@@ -354,3 +354,19 @@ git checkout -b feature/ma-feature
 git commit -m "feat: description de la feature"
 git push origin feature/ma-feature
 ```
+
+---
+
+## 📁 Fichiers Clés — Ce qui a été finalisé
+
+| Fichier | Rôle |
+|---|---|
+| `docker/Dockerfile` | Image multi-stage pour l'API FastAPI |
+| `docker/Dockerfile.streamlit` | Image allégée pour le Dashboard |
+| `docker/nginx.conf` | Reverse proxy + WebSocket Streamlit + rate-limiting |
+| `docker/streamlit_config.toml` | Thème sombre Bitcoin intégré dans l'image |
+| `tests/test_api.py` | 20+ tests unitaires (utilitaires + endpoints) |
+| `Makefile` | Raccourcis `make install`, `make api`, `make docker-up`, etc. |
+| `.env.example` | Template variables d'environnement |
+| `.gitignore` | Exclusion data CSV, modèles `.h5`, secrets |
+
