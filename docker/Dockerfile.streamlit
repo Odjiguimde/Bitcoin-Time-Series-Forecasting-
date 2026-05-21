@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dockerfile.streamlit — Bitcoin Time Series Dashboard (Streamlit)
+# ─────────────────────────────────────────────────────────────────────────────
+
+FROM python:3.11-slim
+
+LABEL maintainer="Bitcoin TS Project" \
+      version="1.0.0" \
+      description="Bitcoin Time Series Dashboard"
+
+WORKDIR /app
+
+# Dépendances système
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dépendances Python — subset allégé (pas de TF ni pmdarima pour le dashboard)
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir \
+        streamlit==1.35.0 \
+        plotly==5.22.0 \
+        pandas==2.2.2 \
+        numpy==1.26.4 \
+        requests==2.32.3 \
+        scikit-learn==1.5.0 \
+        yfinance==0.2.40
+
+# Copie du dashboard
+COPY streamlit_app/ ./streamlit_app/
+COPY data/          ./data/
+
+# Config Streamlit (thème sombre, sans telemetry)
+RUN mkdir -p /app/.streamlit
+COPY docker/streamlit_config.toml /app/.streamlit/config.toml
+
+# Variables d'environnement
+ENV API_URL=http://api:8000 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Utilisateur non-root
+RUN useradd -m -u 1000 appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8501
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
+
+CMD ["streamlit", "run", "streamlit_app/app.py", \
+     "--server.port=8501", \
+     "--server.address=0.0.0.0", \
+     "--server.headless=true", \
+     "--browser.gatherUsageStats=false"]
